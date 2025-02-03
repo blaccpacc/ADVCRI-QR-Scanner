@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner with Beep</title>
+    <title>QR Scanner with Logo</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        #logo { width: 150px; height: auto; margin-bottom: 15px; }
         #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
         input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
         .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
@@ -16,6 +17,9 @@
 </head>
 <body>
 
+    <!-- 🔹 Your Google Drive Image as a Logo -->
+    <img id="logo" src="https://drive.google.com/uc?export=view&id=1TOJN2xdIksoUvCst2GLqc2gbxkvOE8Fq" alt="Company Logo">
+    
     <h2>QR Scanner</h2>
     <button id="start-scan">📷 Scan QR Code</button>
     <button id="stop-scan" class="stop-button" style="display: none;">🛑 Stop Scanning</button>
