@@ -1,136 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner with Beep</title>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
-        input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
-        .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
-        button { cursor: pointer; }
-        .stop-button { background: #dc3545; color: white; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADV QR Code Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      text-align: center;
+    }
+
+    header {
+      background-color: #ffffff;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    header img {
+      max-width: 200px;
+      height: auto;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    #qr-reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 20px auto;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #qr-reader-results {
+      margin-top: 20px;
+    }
+
+    .btn-scan {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px auto;
+      background-color: #006400; /* Dark Green */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-scan:hover {
+      background-color: #004d00; /* Darker Green */
+    }
+
+    .btn-save {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 10px auto;
+      background-color: #007bff; /* Blue */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn-save:hover {
+      background-color: #0056b3; /* Darker Blue */
+    }
+
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    td {
+      background-color: #f9f9f9;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <img src="ADVRCI%20LOGO.png" alt="ADV Construction & Retrofitting, Inc. Logo">
+  </header>
 
-    <h2>QR Scanner</h2>
-    <button id="start-scan">📷 Scan QR Code</button>
-    <button id="stop-scan" class="stop-button" style="display: none;">🛑 Stop Scanning</button>
+  <div class="container">
+    <h1>QR Code Scanner</h1>
+    <p>Scan QR codes and manage your data efficiently.</p>
 
     <div id="qr-reader"></div>
-    <div id="qr-reader-results"></div>
+    <button class="btn-scan" onclick="startScan()">Start Scan</button>
+    <button class="btn-save" onclick="saveToGoogleSheets()">Save to Google Sheets</button>
 
-    <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
-    <button onclick="renameCode()">Rename Code</button>
-    <button onclick="sendToGoogleSheets()">📤 Save to Google Sheets</button>
+    <div id="qr-reader-results">
+      <h2>Scanned Results</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>QR Code</th>
+            <th>Renamed Code</th>
+          </tr>
+        </thead>
+        <tbody id="results-table-body">
+          <!-- Results will be appended here dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-    <audio id="beep-sound">
-        <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
-    </audio>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+  <script>
+    let lastScannedCodes = {};
 
-    <script>
-        let html5QrcodeScanner;
-        let scanning = false;
-        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwaTHzLKGobIS2DJB_UZNX7QCg-8-S4P1QoH8OMWnrZDb3vSVY1ebDZ2iV3LjbuWhnccQ/exec";  // 🔴 Replace with your Web App URL
-        const beepSound = document.getElementById("beep-sound");
+    function startScan() {
+      const qrReader = document.getElementById("qr-reader");
+      const resultsTableBody = document.getElementById("results-table-body");
 
-        document.getElementById("start-scan").addEventListener("click", function() {
-            if (!scanning) startScanner();
-        });
+      const html5QrcodeScanner = new Html5Qrcode("qr-reader");
 
-        document.getElementById("stop-scan").addEventListener("click", function() {
-            stopScanner();
-        });
+      html5QrcodeScanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        (decodedText) => {
+          const currentTime = new Date().getTime();
 
-        function startScanner() {
-            let resultContainer = document.getElementById('qr-reader-results');
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
+          if (!lastScannedCodes[decodedText] || currentTime - lastScannedCodes[decodedText] > 1000) {
+            lastScannedCodes[decodedText] = currentTime;
 
-            qrReader.style.display = "block";
-            startButton.style.display = "none";
-            stopButton.style.display = "block";
-            scanning = true;
+            const timestamp = new Date().toLocaleString();
+            const newRow = `
+              <tr>
+                <td>${timestamp}</td>
+                <td>${decodedText}</td>
+                <td><input type="text" placeholder="Rename Code"></td>
+              </tr>
+            `;
+            resultsTableBody.innerHTML += newRow;
 
-            html5QrcodeScanner = new Html5Qrcode("qr-reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                function onScanSuccess(decodedText) {
-                    playBeep();
-                    stopScanner();
-                    console.log(`Scanned: ${decodedText}`);
-                    resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
-                    document.getElementById("productCode").value = decodedText;
-                },
-                function onScanError(errorMessage) {
-                    console.log(errorMessage);
-                }
-            );
+            new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+          }
+        },
+        (error) => {
+          console.error("Scanning Error: ", error);
         }
+      ).catch((error) => console.error("Start Error: ", error));
+    }
 
-        function stopScanner() {
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
-
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    console.log("Scanner stopped");
-                }).catch((err) => {
-                    console.error("Stop failed", err);
-                });
-            }
-
-            qrReader.style.display = "none";
-            startButton.style.display = "block";
-            stopButton.style.display = "none";
-            scanning = false;
-        }
-
-        function playBeep() {
-            beepSound.play().catch(error => console.log("Audio playback failed:", error));
-        }
-
-        function renameCode() {
-            let productCode = document.getElementById("productCode").value;
-            if (productCode) {
-                let newName = prompt("Enter new name for the QR Code:");
-                if (newName) {
-                    alert(`QR Code "${productCode}" renamed to "${newName}"`);
-                }
-            } else {
-                alert("No QR Code scanned yet!");
-            }
-        }
-
-        function sendToGoogleSheets() {
-            let qrCode = document.getElementById("productCode").value;
-            let renamedCode = prompt("Enter renamed code:");
-
-            if (!qrCode) {
-                alert("No QR Code scanned!");
-                return;
-            }
-
-            let data = { qrCode, renamedCode };
-
-            fetch(GOOGLE_SHEETS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            }).then(() => {
-                alert("Data sent to Google Sheets!");
-            }).catch(error => {
-                alert("Error: " + error.message);
-            });
-        }
-    </script>
-
+    function saveToGoogleSheets() {
+      alert("Save to Google Sheets functionality is not implemented yet.");
+    }
+  </script>
 </body>
 </html>
+
