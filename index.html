@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #logo { width: 100%; max-width: 300px; height: auto; margin: 15px; auto }
+        #logo { width: 100%; max-width: 350px; height: auto; margin: 15px auto; max-height: 200px; }
         #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
         input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
         .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
@@ -17,8 +17,7 @@
 </head>
 <body>
 
-    <!-- 🔹 Your Google Drive Image as a Logo -->
-   <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo" style="width: 150px; height: auto;">
+    <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
     
     <h2>QR Scanner</h2>
     <button id="start-scan"> Scan QR Code</button>
@@ -29,7 +28,7 @@
 
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
     <button onclick="renameCode()">Rename Code</button>
-    <button onclick="sendToGoogleSheets()"> Save to Google Sheets</button>
+    <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
     <audio id="beep-sound">
         <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
@@ -38,8 +37,8 @@
     <script>
         let html5QrcodeScanner;
         let scanning = false;
-        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwVKsq4ysodkdYa6h-kradT9qPTARMAmRMYLHZhkUOOHuRFKih-YXa5ADuDNpzk8dLc2Q/exec";  // 🔴 Replace with your Web App URL
         const beepSound = document.getElementById("beep-sound");
+        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwVKsq4ysodkdYa6h-kradT9qPTARMAmRMYLHZhkUOOHuRFKih-YXa5ADuDNpzk8dLc2Q/exec";
 
         document.getElementById("start-scan").addEventListener("click", function() {
             if (!scanning) startScanner();
@@ -60,21 +59,25 @@
             stopButton.style.display = "block";
             scanning = true;
 
+            // Start scanning with better compatibility for mobile browsers
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
             html5QrcodeScanner.start(
-                { facingMode: "environment" },
+                { facingMode: "environment" }, // rear camera
                 { fps: 10, qrbox: 250 },
                 function onScanSuccess(decodedText) {
                     playBeep();
                     stopScanner();
-                    console.log(`Scanned: ${decodedText}`);
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
                 },
                 function onScanError(errorMessage) {
-                    console.log(errorMessage);
+                    console.log(errorMessage); // Handle any errors related to scanning
                 }
-            );
+            ).catch(function(error) {
+                console.error("Error starting the scanner: ", error);
+                alert("Camera access failed. Please check your camera permissions.");
+            });
         }
 
         function stopScanner() {
