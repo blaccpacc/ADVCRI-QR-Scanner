@@ -38,7 +38,7 @@
     <script>
         let html5QrcodeScanner;
         let scanning = false;
-        let scannedCodes = []; // Array to store scanned QR codes to check for duplicates
+        let scannedCodes = []; // Array to store scanned and manually entered QR codes
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzkFgWdR62bcnJlYkBJzVtq1Lv7aEFA7ToiW2HmKapQk5a7QRiTEdQrErSu0qnOAoCx/exec";
 
         document.getElementById("start-scan").addEventListener("click", function() {
@@ -70,6 +70,7 @@
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
 
+                    // Check for duplicates in scannedCodes array
                     if (scannedCodes.includes(decodedText)) {
                         alert("Already Existing!");
                     } else {
@@ -112,6 +113,7 @@
                 return;
             }
 
+            // Check for duplicates in scannedCodes array
             if (scannedCodes.includes(manualCode)) {
                 alert("Already Existing!");
                 return;
@@ -130,6 +132,7 @@
                 return;
             }
 
+            // Check if the code is already in scannedCodes
             if (scannedCodes.includes(qrCode)) {
                 alert("Already Existing!");
                 return;
