@@ -117,14 +117,14 @@
 
         function sendToGoogleSheets() {
             let qrCode = document.getElementById("productCode").value;
-            let renamedCode = prompt("Enter renamed code:");
 
             if (!qrCode) {
                 alert("No QR Code scanned!");
                 return;
             }
 
-            let data = { qrCode, renamedCode };
+            // Send only the QR Code without asking for a renamed code
+            let data = { qrCode };
 
             fetch(GOOGLE_SHEETS_URL, {
                 method: "POST",
