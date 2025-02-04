@@ -104,14 +104,22 @@
 
         function sendToGoogleSheets() {
             let qrCode = document.getElementById("productCode").value;
-
+            
+            // Check if QR code has been scanned
             if (!qrCode) {
                 alert("No QR Code scanned!");
                 return;
             }
 
-            // Send only the QR Code without asking for a renamed code
-            let data = { qrCode };
+            // Prompt to rename the code before submitting to Google Sheets
+            let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
+
+            if (!renamedCode) {
+                alert("Name cannot be empty!");
+                return;
+            }
+
+            let data = { qrCode, renamedCode };
 
             fetch(GOOGLE_SHEETS_URL, {
                 method: "POST",
