@@ -1,158 +1,149 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner with Logo</title>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #logo { width: 100%; max-width: 350px; height: auto; margin: 15px auto; max-height: 200px; }
-        #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
-        input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
-        .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
-        button { cursor: pointer; }
-        .stop-button { background: #dc3545; color: white; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Scanner with Logo</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+      #logo { width: 100%; max-width: 350px; height: auto; margin: 15px auto; max-height: 200px; }
+      #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
+      input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
+      .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
+      button { cursor: pointer; }
+      .stop-button { background: #dc3545; color: white; }
+  </style>
 </head>
 <body>
 
-    <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
-    
-    <!-- Updated heading -->
-    <h2>Tools/Materials Registration</h2>
-    
-    <button id="start-scan"> Scan QR Code</button>
-    <button id="stop-scan" class="stop-button" style="display: none;">  Stop Scanning</button>
+  <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
+  
+  <!-- Updated heading -->
+  <h2>Tools/Materials Registration</h2>
+  
+  <button id="start-scan"> Scan QR Code</button>
+  <button id="stop-scan" class="stop-button" style="display: none;">  Stop Scanning</button>
 
-    <div id="qr-reader"></div>
-    <div id="qr-reader-results"></div>
+  <div id="qr-reader"></div>
+  <div id="qr-reader-results"></div>
 
-    <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
-    <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
+  <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
+  <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
-    <audio id="beep-sound">
-        <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
-    </audio>
+  <audio id="beep-sound">
+      <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
+  </audio>
 
-    <script>
-        let html5QrcodeScanner;
-        let scanning = false;
-        let scannedCodes = []; // Array to store scanned QR codes to check for duplicates
-        const beepSound = document.getElementById("beep-sound");
-        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxe_1FliXnByfNqjqr7c1jQW863XFIU9Aeyc0vIeTWVoUMw8KY9UHJnBzvwMOYoj_OlLg/exec";
+  <script>
+      let html5QrcodeScanner;
+      let scanning = false;
+      // Remove the local duplicate array since the server will check for duplicates.
+      // let scannedCodes = [];
+      const beepSound = document.getElementById("beep-sound");
+      const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxe_1FliXnByfNqjqr7c1jQW863XFIU9Aeyc0vIeTWVoUMw8KY9UHJnBzvwMOYoj_OlLg/exec";
 
-        document.getElementById("start-scan").addEventListener("click", function() {
-            if (!scanning) startScanner();
-        });
+      document.getElementById("start-scan").addEventListener("click", function() {
+          if (!scanning) startScanner();
+      });
 
-        document.getElementById("stop-scan").addEventListener("click", function() {
-            stopScanner();
-        });
+      document.getElementById("stop-scan").addEventListener("click", function() {
+          stopScanner();
+      });
 
-        function startScanner() {
-            let resultContainer = document.getElementById('qr-reader-results');
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
+      function startScanner() {
+          let resultContainer = document.getElementById('qr-reader-results');
+          let qrReader = document.getElementById("qr-reader");
+          let startButton = document.getElementById("start-scan");
+          let stopButton = document.getElementById("stop-scan");
 
-            qrReader.style.display = "block";
-            startButton.style.display = "none";
-            stopButton.style.display = "block";
-            scanning = true;
+          qrReader.style.display = "block";
+          startButton.style.display = "none";
+          stopButton.style.display = "block";
+          scanning = true;
 
-            // Start scanning with better compatibility for mobile browsers
-            html5QrcodeScanner = new Html5Qrcode("qr-reader");
+          // Start scanning with better compatibility for mobile browsers
+          html5QrcodeScanner = new Html5Qrcode("qr-reader");
 
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, // rear camera
-                { fps: 10, qrbox: 250 },
-                function onScanSuccess(decodedText) {
-                    playBeep();
-                    stopScanner();
-                    resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
-                    document.getElementById("productCode").value = decodedText;
+          html5QrcodeScanner.start(
+              { facingMode: "environment" }, // rear camera
+              { fps: 10, qrbox: 250 },
+              function onScanSuccess(decodedText) {
+                  playBeep();
+                  stopScanner();
+                  resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
+                  document.getElementById("productCode").value = decodedText;
+                  // Note: Do NOT push the code into a local array here.
+              },
+              function onScanError(errorMessage) {
+                  console.log(errorMessage); // Handle any errors related to scanning
+              }
+          ).catch(function(error) {
+              console.error("Error starting the scanner: ", error);
+              alert("Camera access failed. Please check your camera permissions.");
+          });
+      }
 
-                    // Check if the scanned QR code is already in the scannedCodes array
-                    if (scannedCodes.includes(decodedText)) {
-                        alert("Already Existing!");
-                    } else {
-                        // Add the new QR code to the scannedCodes array
-                        scannedCodes.push(decodedText);
-                    }
-                },
-                function onScanError(errorMessage) {
-                    console.log(errorMessage); // Handle any errors related to scanning
-                }
-            ).catch(function(error) {
-                console.error("Error starting the scanner: ", error);
-                alert("Camera access failed. Please check your camera permissions.");
-            });
-        }
+      function stopScanner() {
+          let qrReader = document.getElementById("qr-reader");
+          let startButton = document.getElementById("start-scan");
+          let stopButton = document.getElementById("stop-scan");
 
-        function stopScanner() {
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
+          if (html5QrcodeScanner) {
+              html5QrcodeScanner.stop().then(() => {
+                  console.log("Scanner stopped");
+              }).catch((err) => {
+                  console.error("Stop failed", err);
+              });
+          }
 
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    console.log("Scanner stopped");
-                }).catch((err) => {
-                    console.error("Stop failed", err);
-                });
-            }
+          qrReader.style.display = "none";
+          startButton.style.display = "block";
+          stopButton.style.display = "none";
+          scanning = false;
+      }
 
-            qrReader.style.display = "none";
-            startButton.style.display = "block";
-            stopButton.style.display = "none";
-            scanning = false;
-        }
+      function playBeep() {
+          beepSound.play().catch(error => console.log("Audio playback failed:", error));
+      }
 
-        function playBeep() {
-            beepSound.play().catch(error => console.log("Audio playback failed:", error));
-        }
+      function sendToGoogleSheets() {
+          let qrCode = document.getElementById("productCode").value;
+          
+          if (!qrCode) {
+              alert("No QR Code scanned!");
+              return;
+          }
 
-        function sendToGoogleSheets() {
-            let qrCode = document.getElementById("productCode").value;
-            
-            // Check if QR code has been scanned
-            if (!qrCode) {
-                alert("No QR Code scanned!");
-                return;
-            }
+          let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
+          if (!renamedCode) {
+              alert("Name cannot be empty!");
+              return;
+          }
 
-            // Check if this QR code has already been saved (duplicate check)
-            if (scannedCodes.includes(qrCode)) {
-                alert("Already Existing!"); // Show the dialog box if the code exists
-                return;
-            }
+          let data = { qrCode, renamedCode };
 
-            // Prompt to rename the code before submitting to Google Sheets
-            let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
-
-            if (!renamedCode) {
-                alert("Name cannot be empty!");
-                return;
-            }
-
-            let data = { qrCode, renamedCode };
-
-            // Send the data to Google Sheets
-            fetch(GOOGLE_SHEETS_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            }).then(() => {
-                alert("Data sent to Google Sheets!");
-                // After sending, add the renamed code to the scannedCodes list to avoid duplicates in future
-                scannedCodes.push(qrCode);
-            }).catch(error => {
-                alert("Error: " + error.message);
-            });
-        }
-    </script>
+          // Send the data to Google Sheets
+          fetch(GOOGLE_SHEETS_URL, {
+              method: "POST",
+              // Removing mode:"no-cors" might help you get a proper response. (Ensure your Google App Script Web App is configured properly)
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data)
+          }).then(response => response.text())
+          .then(result => {
+              // The server (Google Apps Script) should return "Success" or an error message.
+              if (result.indexOf("Duplicate") !== -1) {
+                  alert("Already Existing!");
+              } else if (result.indexOf("Success") !== -1) {
+                  alert("Data sent to Google Sheets!");
+              } else {
+                  alert("Response: " + result);
+              }
+          }).catch(error => {
+              alert("Error: " + error.message);
+          });
+      }
+  </script>
 
 </body>
 </html>
