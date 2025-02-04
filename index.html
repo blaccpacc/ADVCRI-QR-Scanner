@@ -19,7 +19,12 @@
 
     <!-- 🔹 Your Google Drive Image as a Logo -->
    <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo" style="width: 150px; height: auto;">
-    
+    #logo {
+    width: 100%; /* Takes full width of its container */
+    max-width: 300px; /* Limits the image size on larger screens */
+    height: auto; /* Maintains the aspect ratio */
+    margin: 15px auto; /* Adds space around the image and centers it */
+}
     <h2>QR Scanner</h2>
     <button id="start-scan"> Scan QR Code</button>
     <button id="stop-scan" class="stop-button" style="display: none;">  Stop Scanning</button>
