@@ -27,7 +27,6 @@
     <div id="qr-reader-results"></div>
 
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
-    <button onclick="renameCode()">Rename Code</button>
     <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
     <audio id="beep-sound">
@@ -101,18 +100,6 @@
 
         function playBeep() {
             beepSound.play().catch(error => console.log("Audio playback failed:", error));
-        }
-
-        function renameCode() {
-            let productCode = document.getElementById("productCode").value;
-            if (productCode) {
-                let newName = prompt("Enter new name for the QR Code:");
-                if (newName) {
-                    alert(`QR Code "${productCode}" renamed to "${newName}"`);
-                }
-            } else {
-                alert("No QR Code scanned yet!");
-            }
         }
 
         function sendToGoogleSheets() {
