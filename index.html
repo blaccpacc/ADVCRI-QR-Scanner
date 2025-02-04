@@ -38,7 +38,6 @@
     <script>
         let html5QrcodeScanner;
         let scanning = false;
-        let scannedCodes = []; // Array to store scanned and manually entered QR codes
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzkFgWdR62bcnJlYkBJzVtq1Lv7aEFA7ToiW2HmKapQk5a7QRiTEdQrErSu0qnOAoCx/exec";
 
         document.getElementById("start-scan").addEventListener("click", function() {
@@ -69,13 +68,6 @@
                     stopScanner();
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
-
-                    // Check for duplicates in scannedCodes array
-                    if (scannedCodes.includes(decodedText)) {
-                        alert("Already Existing!");
-                    } else {
-                        scannedCodes.push(decodedText);
-                    }
                 },
                 function onScanError(errorMessage) {
                     console.log(errorMessage);
@@ -113,14 +105,7 @@
                 return;
             }
 
-            // Check for duplicates in scannedCodes array
-            if (scannedCodes.includes(manualCode)) {
-                alert("Already Existing!");
-                return;
-            }
-
             document.getElementById("productCode").value = manualCode;
-            scannedCodes.push(manualCode);
             alert("Manually entered code saved successfully.");
         }
 
@@ -129,12 +114,6 @@
 
             if (!qrCode) {
                 alert("No QR Code scanned or entered!");
-                return;
-            }
-
-            // Check if the code is already in scannedCodes
-            if (scannedCodes.includes(qrCode)) {
-                alert("Already Existing!");
                 return;
             }
 
@@ -154,7 +133,6 @@
                 body: JSON.stringify(data)
             }).then(() => {
                 alert("Data sent to Google Sheets!");
-                scannedCodes.push(qrCode);
             }).catch(error => {
                 alert("Error: " + error.message);
             });
