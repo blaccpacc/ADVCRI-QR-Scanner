@@ -7,134 +7,101 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        #logo { width: 150px; height: auto; margin-bottom: 15px; }
-        #qr-reader { display: none; width: 100%; max-width: 450px; margin: auto; }
-        input, button { width: 100%; max-width: 450px; padding: 12px; font-size: 18px; margin: 10px 0; border-radius: 8px; }
+        #logo {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 15px auto;
+        }
+        #qr-reader {
+            display: none;
+            width: 100%;
+            max-width: 450px;
+            height: 250px; /* Consistent height with input boxes */
+            margin: auto;
+            border: 2px solid #ccc; /* Optional: Adds a border for better visibility */
+            border-radius: 8px;
+        }
+        input, button {
+            width: 100%;
+            max-width: 450px;
+            padding: 12px;
+            font-size: 18px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
         .result-box { padding: 10px; background: #d4edda; border-radius: 8px; }
         button { cursor: pointer; }
         .stop-button { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
-
-    <!-- 🔹 Your Google Drive Image as a Logo -->
-    <img id="logo" src="https://drive.google.com/uc?export=view&id=1TOJN2xdIksoUvCst2GLqc2gbxkvOE8Fq" alt="Company Logo">
-    
-    <h2>QR Scanner</h2>
-    <button id="start-scan">📷 Scan QR Code</button>
+    <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
+    <h2>Inventory Scanner</h2>
+    <button id="start-scan">Scan QR Code</button>
     <button id="stop-scan" class="stop-button" style="display: none;">🛑 Stop Scanning</button>
-
     <div id="qr-reader"></div>
     <div id="qr-reader-results"></div>
-
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
     <button onclick="renameCode()">Rename Code</button>
-    <button onclick="sendToGoogleSheets()">📤 Save to Google Sheets</button>
-
-    <audio id="beep-sound">
-        <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
-    </audio>
+    <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
     <script>
-        let html5QrcodeScanner;
-        let scanning = false;
-        const GOOGLE_SHEETS_URL = "YOUR_WEB_APP_URL_HERE";  // 🔴 Replace with your Web App URL
-        const beepSound = document.getElementById("beep-sound");
+        let html5QrCode;
 
         document.getElementById("start-scan").addEventListener("click", function() {
-            if (!scanning) startScanner();
+            document.getElementById("qr-reader").style.display = "block";
+            document.getElementById("start-scan").style.display = "none";
+            document.getElementById("stop-scan").style.display = "inline-block";
+            
+            html5QrCode = new Html5Qrcode("qr-reader");
+            
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: 250 },
+                qrCodeMessage => {
+                    document.getElementById("productCode").value = qrCodeMessage;
+                },
+                errorMessage => {
+                    console.log(errorMessage);
+                }
+            ).catch(err => {
+                console.error("Error starting QR code scanner:", err);
+            });
         });
 
         document.getElementById("stop-scan").addEventListener("click", function() {
-            stopScanner();
+            html5QrCode.stop().then(() => {
+                document.getElementById("qr-reader").style.display = "none";
+                document.getElementById("start-scan").style.display = "inline-block";
+                document.getElementById("stop-scan").style.display = "none";
+            }).catch(err => {
+                console.error("Error stopping QR code scanner:", err);
+            });
         });
 
-        function startScanner() {
-            let resultContainer = document.getElementById('qr-reader-results');
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
-
-            qrReader.style.display = "block";
-            startButton.style.display = "none";
-            stopButton.style.display = "block";
-            scanning = true;
-
-            html5QrcodeScanner = new Html5Qrcode("qr-reader");
-            html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                function onScanSuccess(decodedText) {
-                    playBeep();
-                    stopScanner();
-                    console.log(`Scanned: ${decodedText}`);
-                    resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
-                    document.getElementById("productCode").value = decodedText;
-                },
-                function onScanError(errorMessage) {
-                    console.log(errorMessage);
-                }
-            );
-        }
-
-        function stopScanner() {
-            let qrReader = document.getElementById("qr-reader");
-            let startButton = document.getElementById("start-scan");
-            let stopButton = document.getElementById("stop-scan");
-
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().then(() => {
-                    console.log("Scanner stopped");
-                }).catch((err) => {
-                    console.error("Stop failed", err);
-                });
-            }
-
-            qrReader.style.display = "none";
-            startButton.style.display = "block";
-            stopButton.style.display = "none";
-            scanning = false;
-        }
-
-        function playBeep() {
-            beepSound.play().catch(error => console.log("Audio playback failed:", error));
-        }
-
         function renameCode() {
-            let productCode = document.getElementById("productCode").value;
-            if (productCode) {
-                let newName = prompt("Enter new name for the QR Code:");
-                if (newName) {
-                    alert(`QR Code "${productCode}" renamed to "${newName}"`);
-                }
-            } else {
-                alert("No QR Code scanned yet!");
+            const newCode = prompt("Enter a new name for the code:", document.getElementById("productCode").value);
+            if (newCode) {
+                document.getElementById("productCode").value = newCode;
             }
         }
 
         function sendToGoogleSheets() {
-            let qrCode = document.getElementById("productCode").value;
-            let renamedCode = prompt("Enter renamed code:");
-
-            if (!qrCode) {
-                alert("No QR Code scanned!");
-                return;
-            }
-
-            let data = { qrCode, renamedCode };
-
-            fetch(GOOGLE_SHEETS_URL, {
+            const qrData = document.getElementById("productCode").value;
+            const formUrl = "YOUR_GOOGLE_FORM_URL";  // The URL of your Google Form
+            
+            const formData = new FormData();
+            formData.append("entry.123456", qrData);  // Replace "entry.123456" with the correct field ID for your form.
+            
+            fetch(formUrl, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            }).then(() => {
-                alert("Data sent to Google Sheets!");
-            }).catch(error => {
-                alert("Error: " + error.message);
-            });
+                body: formData,
+            })
+            .then(response => response.text())
+            .then(data => alert("Data saved successfully!"))
+            .catch(error => alert("Error saving data: " + error));
         }
     </script>
-
 </body>
 </html>
