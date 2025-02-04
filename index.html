@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Scanner with Logo</title>
+    <title>Tools/Materials Registration</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
         #logo { width: 100%; max-width: 350px; height: auto; margin: 15px auto; max-height: 200px; }
@@ -19,16 +20,14 @@
 
     <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
     
-    <!-- Updated heading -->
     <h2>Tools/Materials Registration</h2>
-    
     <button id="start-scan"> Scan QR Code</button>
     <button id="stop-scan" class="stop-button" style="display: none;">  Stop Scanning</button>
 
     <div id="qr-reader"></div>
     <div id="qr-reader-results"></div>
 
-    <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
+    <input type="text" id="productCode" placeholder="Scanned QR Code or Barcode" readonly>
     <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
     <audio id="beep-sound">
@@ -38,18 +37,21 @@
     <script>
         let html5QrcodeScanner;
         let scanning = false;
-        let scannedCodes = []; // Array to store scanned QR codes to check for duplicates
         const beepSound = document.getElementById("beep-sound");
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwVKsq4ysodkdYa6h-kradT9qPTARMAmRMYLHZhkUOOHuRFKih-YXa5ADuDNpzk8dLc2Q/exec";
+        let scannedCodes = [];
 
+        // Start QR scanning
         document.getElementById("start-scan").addEventListener("click", function() {
             if (!scanning) startScanner();
         });
 
+        // Stop QR scanning
         document.getElementById("stop-scan").addEventListener("click", function() {
             stopScanner();
         });
 
+        // Start the QR scanner
         function startScanner() {
             let resultContainer = document.getElementById('qr-reader-results');
             let qrReader = document.getElementById("qr-reader");
@@ -61,9 +63,8 @@
             stopButton.style.display = "block";
             scanning = true;
 
-            // Start scanning with better compatibility for mobile browsers
+            // Start scanning QR code
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
-
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, // rear camera
                 { fps: 10, qrbox: 250 },
@@ -72,14 +73,6 @@
                     stopScanner();
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
-
-                    // Check if the scanned QR code is already in the scannedCodes array
-                    if (scannedCodes.includes(decodedText)) {
-                        alert("Already Existing!");
-                    } else {
-                        // Add the new QR code to the scannedCodes array
-                        scannedCodes.push(decodedText);
-                    }
                 },
                 function onScanError(errorMessage) {
                     console.log(errorMessage); // Handle any errors related to scanning
@@ -90,6 +83,7 @@
             });
         }
 
+        // Stop scanning QR codes
         function stopScanner() {
             let qrReader = document.getElementById("qr-reader");
             let startButton = document.getElementById("start-scan");
@@ -109,36 +103,26 @@
             scanning = false;
         }
 
+        // Function to play the beep sound
         function playBeep() {
             beepSound.play().catch(error => console.log("Audio playback failed:", error));
         }
 
+        // Function to send data to Google Sheets
         function sendToGoogleSheets() {
             let qrCode = document.getElementById("productCode").value;
-            
-            // Check if QR code has been scanned
-            if (!qrCode) {
-                alert("No QR Code scanned!");
-                return;
-            }
 
-            // Check if this QR code has already been saved (duplicate check)
+            // Check if the scanned code is already in the array
             if (scannedCodes.includes(qrCode)) {
-                alert("Already Existing!"); // Show the dialog box if the code exists
+                alert("Already Existing!");
                 return;
             }
 
-            // Prompt to rename the code before submitting to Google Sheets
-            let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
+            // Add the scanned code to the array to prevent duplicates
+            scannedCodes.push(qrCode);
 
-            if (!renamedCode) {
-                alert("Name cannot be empty!");
-                return;
-            }
+            let data = { qrCode };
 
-            let data = { qrCode, renamedCode };
-
-            // Send the data to Google Sheets
             fetch(GOOGLE_SHEETS_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -146,12 +130,50 @@
                 body: JSON.stringify(data)
             }).then(() => {
                 alert("Data sent to Google Sheets!");
-                // After sending, add the renamed code to the scannedCodes list to avoid duplicates in future
-                scannedCodes.push(qrCode);
             }).catch(error => {
                 alert("Error: " + error.message);
             });
         }
+
+        // Function to start barcode scanning with QuaggaJS
+        function startBarcodeScanner() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#qr-reader'), // capture from the camera
+                },
+                decoder: {
+                    readers: ["code_39_reader"] // You can add other formats here, like code_128_reader, ean_reader, etc.
+                }
+            }, function(err) {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                console.log("Barcode scanner started!");
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function(result) {
+                let barcode = result.codeResult.code;
+                playBeep();
+                document.getElementById("productCode").value = barcode;
+                alert(`Scanned Barcode: ${barcode}`);
+                stopScanner();
+            });
+        }
+
+        // Start barcode scanning
+        document.getElementById("start-scan").addEventListener("click", function() {
+            if (!scanning) {
+                startBarcodeScanner();
+                scanning = true;
+                document.getElementById("start-scan").style.display = "none";
+                document.getElementById("stop-scan").style.display = "block";
+            }
+        });
+
     </script>
 
 </body>
