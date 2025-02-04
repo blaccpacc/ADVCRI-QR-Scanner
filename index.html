@@ -35,15 +35,10 @@
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
     <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
-    <audio id="beep-sound">
-        <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
-    </audio>
-
     <script>
         let html5QrcodeScanner;
         let scanning = false;
         let scannedCodes = []; // Array to store scanned QR codes to check for duplicates
-        const beepSound = document.getElementById("beep-sound");
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzkFgWdR62bcnJlYkBJzVtq1Lv7aEFA7ToiW2HmKapQk5a7QRiTEdQrErSu0qnOAoCx/exec";
 
         document.getElementById("start-scan").addEventListener("click", function() {
@@ -71,7 +66,6 @@
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 function onScanSuccess(decodedText) {
-                    playBeep();
                     stopScanner();
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
@@ -110,10 +104,6 @@
             scanning = false;
         }
 
-        function playBeep() {
-            beepSound.play().catch(error => console.log("Audio playback failed:", error));
-        }
-
         function submitManualCode() {
             let manualCode = document.getElementById("manualCode").value;
 
@@ -122,7 +112,6 @@
                 return;
             }
 
-            // Check if the manually entered code already exists
             if (scannedCodes.includes(manualCode)) {
                 alert("Already Existing!");
                 return;
