@@ -36,6 +36,7 @@
     <script>
         let html5QrcodeScanner;
         let scanning = false;
+        let scannedCodes = []; // Array to store scanned QR codes to check for duplicates
         const beepSound = document.getElementById("beep-sound");
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwVKsq4ysodkdYa6h-kradT9qPTARMAmRMYLHZhkUOOHuRFKih-YXa5ADuDNpzk8dLc2Q/exec";
 
@@ -69,6 +70,14 @@
                     stopScanner();
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
+
+                    // Check if the scanned QR code is already in the scannedCodes array
+                    if (scannedCodes.includes(decodedText)) {
+                        alert("Already Existing!");
+                    } else {
+                        // Add the new QR code to the scannedCodes array
+                        scannedCodes.push(decodedText);
+                    }
                 },
                 function onScanError(errorMessage) {
                     console.log(errorMessage); // Handle any errors related to scanning
@@ -111,6 +120,12 @@
                 return;
             }
 
+            // Check if this QR code has already been saved (duplicate check)
+            if (scannedCodes.includes(qrCode)) {
+                alert("Already Existing!"); // Show the dialog box if the code exists
+                return;
+            }
+
             // Prompt to rename the code before submitting to Google Sheets
             let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
 
@@ -121,6 +136,7 @@
 
             let data = { qrCode, renamedCode };
 
+            // Send the data to Google Sheets
             fetch(GOOGLE_SHEETS_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -128,6 +144,8 @@
                 body: JSON.stringify(data)
             }).then(() => {
                 alert("Data sent to Google Sheets!");
+                // After sending, add the renamed code to the scannedCodes list to avoid duplicates in future
+                scannedCodes.push(qrCode);
             }).catch(error => {
                 alert("Error: " + error.message);
             });
