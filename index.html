@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -19,15 +19,19 @@
 
     <img id="logo" src="https://i.imgur.com/yf3hpuu.png" alt="Company Logo">
     
-    <!-- Updated heading -->
     <h2>Tools/Materials Registration</h2>
     
     <button id="start-scan"> Scan QR Code</button>
-    <button id="stop-scan" class="stop-button" style="display: none;">  Stop Scanning</button>
+    <button id="stop-scan" class="stop-button" style="display: none;"> Stop Scanning</button>
 
     <div id="qr-reader"></div>
     <div id="qr-reader-results"></div>
 
+    <!-- Manually enter QR code -->
+    <input type="text" id="manualCode" placeholder="Enter QR Code Manually">
+    <button onclick="submitManualCode()">Submit Manually Entered Code</button>
+
+    <!-- QR code from scanner -->
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
     <button onclick="sendToGoogleSheets()">Save to Google Sheets</button>
 
@@ -61,11 +65,10 @@
             stopButton.style.display = "block";
             scanning = true;
 
-            // Start scanning with better compatibility for mobile browsers
             html5QrcodeScanner = new Html5Qrcode("qr-reader");
 
             html5QrcodeScanner.start(
-                { facingMode: "environment" }, // rear camera
+                { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 function onScanSuccess(decodedText) {
                     playBeep();
@@ -73,16 +76,14 @@
                     resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                     document.getElementById("productCode").value = decodedText;
 
-                    // Check if the scanned QR code is already in the scannedCodes array
                     if (scannedCodes.includes(decodedText)) {
                         alert("Already Existing!");
                     } else {
-                        // Add the new QR code to the scannedCodes array
                         scannedCodes.push(decodedText);
                     }
                 },
                 function onScanError(errorMessage) {
-                    console.log(errorMessage); // Handle any errors related to scanning
+                    console.log(errorMessage);
                 }
             ).catch(function(error) {
                 console.error("Error starting the scanner: ", error);
@@ -113,22 +114,38 @@
             beepSound.play().catch(error => console.log("Audio playback failed:", error));
         }
 
+        function submitManualCode() {
+            let manualCode = document.getElementById("manualCode").value;
+
+            if (!manualCode) {
+                alert("Please enter a QR code number!");
+                return;
+            }
+
+            // Check if the manually entered code already exists
+            if (scannedCodes.includes(manualCode)) {
+                alert("Already Existing!");
+                return;
+            }
+
+            document.getElementById("productCode").value = manualCode;
+            scannedCodes.push(manualCode);
+            alert("Manually entered code saved successfully.");
+        }
+
         function sendToGoogleSheets() {
             let qrCode = document.getElementById("productCode").value;
-            
-            // Check if QR code has been scanned
+
             if (!qrCode) {
-                alert("No QR Code scanned!");
+                alert("No QR Code scanned or entered!");
                 return;
             }
 
-            // Check if this QR code has already been saved (duplicate check)
             if (scannedCodes.includes(qrCode)) {
-                alert("Already Existing!"); // Show the dialog box if the code exists
+                alert("Already Existing!");
                 return;
             }
 
-            // Prompt to rename the code before submitting to Google Sheets
             let renamedCode = prompt("Enter a name for the QR Code:", qrCode);
 
             if (!renamedCode) {
@@ -138,7 +155,6 @@
 
             let data = { qrCode, renamedCode };
 
-            // Send the data to Google Sheets
             fetch(GOOGLE_SHEETS_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -146,7 +162,6 @@
                 body: JSON.stringify(data)
             }).then(() => {
                 alert("Data sent to Google Sheets!");
-                // After sending, add the renamed code to the scannedCodes list to avoid duplicates in future
                 scannedCodes.push(qrCode);
             }).catch(error => {
                 alert("Error: " + error.message);
@@ -155,4 +170,4 @@
     </script>
 
 </body>
-</html>    
+</html>
