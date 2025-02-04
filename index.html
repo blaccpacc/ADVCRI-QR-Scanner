@@ -20,8 +20,8 @@
     <!-- 🔹 Your Google Drive Image as a Logo -->
   <img id="logo" src="https://drive.google.com/uc?export=view&id=1TOJN2xdIksoUvCst2GLqc2gbxkvOE8Fq" alt="Company Logo" style="width: 150px; height: auto;">
 
-    <h2>QR Scanner</h2>
-    <button id="start-scan">📷 Scan QR Code</button>
+    <h2>Inventory Scanner</h2>
+    <button id="start-scan"> Scan QR Code</button>
     <button id="stop-scan" class="stop-button" style="display: none;">🛑 Stop Scanning</button>
 
     <div id="qr-reader"></div>
@@ -29,7 +29,7 @@
 
     <input type="text" id="productCode" placeholder="Scanned QR Code" readonly>
     <button onclick="renameCode()">Rename Code</button>
-    <button onclick="sendToGoogleSheets()">📤 Save to Google Sheets</button>
+    <button onclick="sendToGoogleSheets()"> Save to Google Sheets</button>
 
     <audio id="beep-sound">
         <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
