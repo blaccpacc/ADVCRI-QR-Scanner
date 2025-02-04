@@ -38,10 +38,9 @@
   <script>
       let html5QrcodeScanner;
       let scanning = false;
-      // Remove the local duplicate array since the server will check for duplicates.
-      // let scannedCodes = [];
+      // We removed any local duplicate array so that the server handles duplicates.
       const beepSound = document.getElementById("beep-sound");
-      const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwPXG16s9AToRwCZNOSpHcRVteq4SN27ZJxnpJRVHwkfnZ3V8IuNSTe4CeabYr1fDSgTg/exec";
+      const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbysznsczKglyoPFKPUK0HlRFgvCqoNNJ_u8jvSaN2uMkMqMjRKs8TdSONl88d7Ydn0gDQ/exec";
 
       document.getElementById("start-scan").addEventListener("click", function() {
           if (!scanning) startScanner();
@@ -62,21 +61,18 @@
           stopButton.style.display = "block";
           scanning = true;
 
-          // Start scanning with better compatibility for mobile browsers
           html5QrcodeScanner = new Html5Qrcode("qr-reader");
-
           html5QrcodeScanner.start(
-              { facingMode: "environment" }, // rear camera
+              { facingMode: "environment" },
               { fps: 10, qrbox: 250 },
               function onScanSuccess(decodedText) {
                   playBeep();
                   stopScanner();
                   resultContainer.innerHTML = `<div class="result-box">Scanned: ${decodedText}</div>`;
                   document.getElementById("productCode").value = decodedText;
-                  // Note: Do NOT push the code into a local array here.
               },
               function onScanError(errorMessage) {
-                  console.log(errorMessage); // Handle any errors related to scanning
+                  console.log(errorMessage);
               }
           ).catch(function(error) {
               console.error("Error starting the scanner: ", error);
@@ -123,15 +119,15 @@
 
           let data = { qrCode, renamedCode };
 
-          // Send the data to Google Sheets
+          console.log("Sending data:", data);
           fetch(GOOGLE_SHEETS_URL, {
               method: "POST",
-              // Removing mode:"no-cors" might help you get a proper response. (Ensure your Google App Script Web App is configured properly)
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(data)
-          }).then(response => response.text())
+          })
+          .then(response => response.text())
           .then(result => {
-              // The server (Google Apps Script) should return "Success" or an error message.
+              console.log("Response:", result);
               if (result.indexOf("Duplicate") !== -1) {
                   alert("Already Existing!");
               } else if (result.indexOf("Success") !== -1) {
@@ -139,7 +135,9 @@
               } else {
                   alert("Response: " + result);
               }
-          }).catch(error => {
+          })
+          .catch(error => {
+              console.error("Fetch error:", error);
               alert("Error: " + error.message);
           });
       }
